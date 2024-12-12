@@ -14,20 +14,9 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  // Platform messages are asynchronous, so we initialize in an async method.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      initialRoute: "/",
-      home: Navigator(
-        pages: [
-          MaterialPage(child: HomePage()),
-        ],
-        onPopPage: (route, result) {
-          return route.didPop(result);
-        },
-      ),
-    );
+    return MaterialApp(home: HomePage());
   }
 }
 
@@ -43,7 +32,7 @@ class _HomePageState extends State<HomePage> {
   late TextEditingController _idempotencyId;
   late TextEditingController _token;
 
-  final ValueNotifier<String> _sdkResponse = ValueNotifier('');
+  final ValueNotifier<dynamic> _sdkResponse = ValueNotifier('');
 
   @override
   void initState() {
@@ -52,9 +41,9 @@ class _HomePageState extends State<HomePage> {
         text:
             'equal.business.9123265d-0683-49cf-afb0-862a144039b6#8f405d81-ee46-4fd4-9ab9-087848127b5e');
     _idempotencyId =
-        TextEditingController(text: '7b138463-489c-4f7b-96ab-103616e30ad4');
+        TextEditingController(text: '1fe323a5-99d8-4853-8b71-5a7aa26aa809');
     _token = TextEditingController(
-        text: 'test.zxGQRQiPmD4GnrqCUATbMACSDtpg9jKyeLST71H150g=');
+        text: 'test.Kf9Le0vXqeG9_LKBTttbOe52gKujyz_KO0HKqW5SiLQ=');
   }
 
   @override
@@ -89,14 +78,19 @@ class _HomePageState extends State<HomePage> {
                 child: ElevatedButton(
                   onPressed: () {
                     EqualSDK.instance.launchSDK(
-                        context,
-                        EqualSDKConfig(
-                          clientId: _clientId.text.trim(),
-                          idempotencyId: _idempotencyId.text.trim(),
-                          token: _token.text.trim(),
-                        ), (type, data) {
-                      _sdkResponse.value = "$type - $data";
-                    });
+                      context: context,
+                      equalSdkConfig: EqualSDKConfig(
+                        clientId: _clientId.text.trim(),
+                        idempotencyId: _idempotencyId.text.trim(),
+                        token: _token.text.trim(),
+                      ),
+                      onSubmit: (data) {
+                        _sdkResponse.value = data;
+                      },
+                      onError: (data) {
+                        _sdkResponse.value = data;
+                      },
+                    );
                   },
                   child: const Text('Launch SDK'),
                 ),
@@ -105,10 +99,11 @@ class _HomePageState extends State<HomePage> {
                 height: 30,
               ),
               ValueListenableBuilder(
-                  valueListenable: _sdkResponse,
-                  builder: (_, __, ___) => Text(_sdkResponse.value.isNotEmpty
-                      ? "SDK Response is ${_sdkResponse.value}"
-                      : ''))
+                valueListenable: _sdkResponse,
+                builder: (_, __, ___) => Text(_sdkResponse.value.isNotEmpty
+                    ? "SDK Response is ${_sdkResponse.value}"
+                    : ''),
+              )
             ],
           ),
         ),

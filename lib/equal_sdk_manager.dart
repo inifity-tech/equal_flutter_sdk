@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:equal_sdk_flutter/model/equal_sdk_params.dart';
+import 'package:equal_sdk_flutter/model/event_response.dart';
 import 'package:http/http.dart' as http;
 
 class EqualSDKManager {
@@ -11,23 +12,23 @@ class EqualSDKManager {
   static const String PROD_APP_URL = 'https://equal.in';
   static const String TEST_APP_URL = 'https://test.equal.in';
 
-  final EqualSDKConfig equalSDKConfig;
+  static String? _transactionId;
+  static String? get transactionId => _transactionId;
 
-  EqualSDKManager({required this.equalSDKConfig});
+  String _getVerifyUrl(EqualSDKConfig equalSDKConfig) =>
+      equalSDKConfig.token.startsWith('test')
+          ? TEST_VERIFY_URL
+          : PROD_VERIFY_URL;
 
-  String get verifyUrl => equalSDKConfig.token.startsWith('test')
-      ? TEST_VERIFY_URL
-      : PROD_VERIFY_URL;
-
-  String get equalDomain =>
+  String _getEqualDomain(EqualSDKConfig equalSDKConfig) =>
       equalSDKConfig.token.startsWith('test') ? TEST_APP_URL : PROD_APP_URL;
 
-  Future<String?> getGatewayURL(Function(dynamic) onError) async {
-    print('equal config $equalSDKConfig');
+  Future<String?> getGatewayURL(
+      EqualSDKConfig equalSDKConfig, Function(EventResponse) onError) async {
     try {
       final response = await http.post(
-        Uri.parse(verifyUrl),
-        headers: {
+        Uri.parse(_getVerifyUrl(equalSDKConfig)),
+        headers: const {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
         },
@@ -39,42 +40,45 @@ class EqualSDKManager {
       );
 
       final data = jsonDecode(response.body);
-
-      print("response iframe url $data");
-
-      if (data['status'] == 'SUCCESS') {
-        String code = data['code'];
-        String transactionId = data['transaction_id'];
-        String identifier = '';
-
-        if (data.containsKey('allowed_consumers') &&
-            data['allowed_consumers'].isNotEmpty &&
-            data['allowed_consumers'][0]['identifier'] != null) {
-          identifier = data['allowed_consumers'][0]['identifier'];
-        }
-
-        String finalMobile = equalSDKConfig.mobile ?? identifier;
-        String iframeUrl =
-            '$equalDomain/app/gateway?transaction_id=$transactionId'
-            '&code=$code&source=flutterSdk&sdk_launch=true'
-            '&isMobileLaunch=true&embedded=true';
-
-        if (finalMobile.isNotEmpty) {
-          iframeUrl += '&mb=${base64.encode(utf8.encode(finalMobile))}';
-        }
-        print('iframe url $iframeUrl');
-        return iframeUrl;
-      } else {
+      if (data['status'] != 'SUCCESS') {
         final errorMessage = data['message'] ??
             'Unable to load the gateway due to a technical error. Please try again.';
-        onError({'status': 'ERROR', 'message': errorMessage});
+        onError(EventResponse(status: 'ON_ERROR', message: errorMessage));
+        return null;
       }
+
+      final String code = data['code'];
+      _transactionId = data['transaction_id'];
+
+      final String identifier = data['allowed_consumers']?.isNotEmpty == true
+          ? data['allowed_consumers'][0]['identifier'] ?? ''
+          : '';
+
+      final String finalMobile = equalSDKConfig.mobile ?? identifier;
+      final String equalDomain = _getEqualDomain(equalSDKConfig);
+
+      final Map<String, String> queryParams = {
+        'transaction_id': _transactionId??'',
+        'code': code,
+        'source': 'flutterSdk',
+        'sdk_launch': 'true',
+        'isMobileLaunch': 'true',
+        'embedded': 'true',
+      };
+
+      if (finalMobile.isNotEmpty) {
+        queryParams['mb'] = base64.encode(utf8.encode(finalMobile));
+      }
+
+      final Uri iframeUri = Uri.parse(equalDomain + '/app/gateway')
+          .replace(queryParameters: queryParams);
+
+      return iframeUri.toString();
     } catch (e) {
-      print("catch error ${e}");
       const errorMessage =
           'Unable to load the gateway due to a technical error. Please try again.';
-      onError({'status': 'ERROR', 'message': errorMessage});
+      onError(EventResponse(status: 'ON_ERROR', message: errorMessage));
+      return null;
     }
-    return null;
   }
 }
