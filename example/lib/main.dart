@@ -31,6 +31,7 @@ class _HomePageState extends State<HomePage> {
   late TextEditingController _clientId;
   late TextEditingController _idempotencyId;
   late TextEditingController _token;
+  late TextEditingController _mobile;
 
   final ValueNotifier<dynamic> _sdkResponse = ValueNotifier('');
 
@@ -44,6 +45,7 @@ class _HomePageState extends State<HomePage> {
         TextEditingController(text: '1fe323a5-99d8-4853-8b71-5a7aa26aa809');
     _token = TextEditingController(
         text: 'test.Kf9Le0vXqeG9_LKBTttbOe52gKujyz_KO0HKqW5SiLQ=');
+    _mobile = TextEditingController(text: '');
   }
 
   @override
@@ -74,6 +76,12 @@ class _HomePageState extends State<HomePage> {
                     label: Text("token"), border: OutlineInputBorder()),
               ),
               const SizedBox(height: 10),
+              TextFormField(
+                controller: _mobile,
+                decoration: const InputDecoration(
+                    label: Text("Mobile Number"), border: OutlineInputBorder()),
+              ),
+              const SizedBox(height: 10),
               Center(
                 child: ElevatedButton(
                   onPressed: () {
@@ -83,6 +91,7 @@ class _HomePageState extends State<HomePage> {
                         clientId: _clientId.text.trim(),
                         idempotencyId: _idempotencyId.text.trim(),
                         token: _token.text.trim(),
+                        mobile: _mobile.text.trim(),
                       ),
                       onSubmit: (data) {
                         _sdkResponse.value = data;
