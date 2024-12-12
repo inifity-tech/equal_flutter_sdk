@@ -3,7 +3,8 @@ import 'package:equal_sdk_flutter/model/equal_sdk_params.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-void main() async{
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   await Permission.camera.request();
   runApp(const MyApp());
 }
