@@ -7,19 +7,28 @@ abstract class EqualSDK {
 
   static EqualSDK get instance => _instance;
 
-  void launchSDK(BuildContext context, EqualSDKConfig equalSdkConfig,
-      Function(String, dynamic) data);
+  void launchSDK({
+    required BuildContext context,
+    required EqualSDKConfig equalSdkConfig,
+    required Function(dynamic) onSubmit,
+    required Function(dynamic) onError,
+  });
 }
 
 class _EqualSDKImplementation implements EqualSDK {
   @override
-  void launchSDK(BuildContext context, EqualSDKConfig equalSdkConfig,
-      Function(String type, dynamic data) data) {
+  void launchSDK({
+    required BuildContext context,
+    required EqualSDKConfig equalSdkConfig,
+    required Function(dynamic) onSubmit,
+    required Function(dynamic) onError,
+  }) {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => EqualSDKLauncher(
           equalSDKConfig: equalSdkConfig,
-          onEvent: data,
+          onSubmit: onSubmit,
+          onError: onError,
         ),
       ),
     );

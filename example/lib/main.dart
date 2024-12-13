@@ -1,8 +1,11 @@
 import 'package:equal_sdk_flutter/equal_sdk_flutter.dart';
 import 'package:equal_sdk_flutter/model/equal_sdk_params.dart';
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Permission.camera.request();
   runApp(const MyApp());
 }
 
@@ -14,20 +17,9 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  // Platform messages are asynchronous, so we initialize in an async method.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      initialRoute: "/",
-      home: Navigator(
-        pages: [
-          MaterialPage(child: HomePage()),
-        ],
-        onPopPage: (route, result) {
-          return route.didPop(result);
-        },
-      ),
-    );
+    return MaterialApp(home: HomePage());
   }
 }
 
@@ -42,8 +34,9 @@ class _HomePageState extends State<HomePage> {
   late TextEditingController _clientId;
   late TextEditingController _idempotencyId;
   late TextEditingController _token;
+  late TextEditingController _mobile;
 
-  final ValueNotifier<String> _sdkResponse = ValueNotifier('');
+  final ValueNotifier<dynamic> _sdkResponse = ValueNotifier('');
 
   @override
   void initState() {
@@ -52,9 +45,10 @@ class _HomePageState extends State<HomePage> {
         text:
             'equal.business.9123265d-0683-49cf-afb0-862a144039b6#8f405d81-ee46-4fd4-9ab9-087848127b5e');
     _idempotencyId =
-        TextEditingController(text: '7b138463-489c-4f7b-96ab-103616e30ad4');
+        TextEditingController(text: '1fe323a5-99d8-4853-8b71-5a7aa26aa809');
     _token = TextEditingController(
-        text: 'test.zxGQRQiPmD4GnrqCUATbMACSDtpg9jKyeLST71H150g=');
+        text: 'test.Kf9Le0vXqeG9_LKBTttbOe52gKujyz_KO0HKqW5SiLQ=');
+    _mobile = TextEditingController(text: '');
   }
 
   @override
@@ -85,18 +79,30 @@ class _HomePageState extends State<HomePage> {
                     label: Text("token"), border: OutlineInputBorder()),
               ),
               const SizedBox(height: 10),
+              TextFormField(
+                controller: _mobile,
+                decoration: const InputDecoration(
+                    label: Text("Mobile Number"), border: OutlineInputBorder()),
+              ),
+              const SizedBox(height: 10),
               Center(
                 child: ElevatedButton(
                   onPressed: () {
                     EqualSDK.instance.launchSDK(
-                        context,
-                        EqualSDKConfig(
-                          clientId: _clientId.text.trim(),
-                          idempotencyId: _idempotencyId.text.trim(),
-                          token: _token.text.trim(),
-                        ), (type, data) {
-                      _sdkResponse.value = "$type - $data";
-                    });
+                      context: context,
+                      equalSdkConfig: EqualSDKConfig(
+                        clientId: _clientId.text.trim(),
+                        idempotencyId: _idempotencyId.text.trim(),
+                        token: _token.text.trim(),
+                        mobile: _mobile.text.trim(),
+                      ),
+                      onSubmit: (data) {
+                        _sdkResponse.value = data;
+                      },
+                      onError: (data) {
+                        _sdkResponse.value = data;
+                      },
+                    );
                   },
                   child: const Text('Launch SDK'),
                 ),
@@ -105,10 +111,11 @@ class _HomePageState extends State<HomePage> {
                 height: 30,
               ),
               ValueListenableBuilder(
-                  valueListenable: _sdkResponse,
-                  builder: (_, __, ___) => Text(_sdkResponse.value.isNotEmpty
-                      ? "SDK Response is ${_sdkResponse.value}"
-                      : ''))
+                valueListenable: _sdkResponse,
+                builder: (_, __, ___) => Text(_sdkResponse.value.isNotEmpty
+                    ? "SDK Response is ${_sdkResponse.value}"
+                    : ''),
+              )
             ],
           ),
         ),

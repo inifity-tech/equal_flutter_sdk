@@ -1,4 +1,6 @@
+import 'package:equal_sdk_flutter/equal_sdk_manager.dart';
 import 'package:equal_sdk_flutter/helper/web_view_settings_helper.dart';
+import 'package:equal_sdk_flutter/model/event_response.dart';
 import 'package:equal_sdk_flutter/utils/digi_event_helper.dart';
 import 'package:equal_sdk_flutter/view/i_webview.dart';
 import 'package:flutter/material.dart';
@@ -13,7 +15,8 @@ class EqualInAppWebViewWidget extends IWebView {
 
   EqualInAppWebViewWidget({
     required super.initialUrl,
-    required super.onCallback,
+    required super.onSubmit,
+    required super.onError,
   });
 
   // SDK Event Handling
@@ -21,13 +24,20 @@ class EqualInAppWebViewWidget extends IWebView {
     try {
       if (url.contains('URL_SDK_EVENT')) {
         if (url.contains('ON_CLOSE')) {
-          onCallback.call('CLOSED_SDK', null);
+          onError.call(
+            EventResponse(status: 'CLOSED_SDK', transactionId: '').toJson(),
+          );
         } else if (url.contains('ON_SUBMIT')) {
-          onCallback.call('SUCCESS_SUBMIT', null);
+          onSubmit.call(EventResponse(
+                  status: 'SUCCESS_SUBMIT',
+                  transactionId: EqualSDKManager.transactionId)
+              .toJson());
         }
       }
     } catch (e) {
-      onCallback.call('ERROR', e);
+      onError.call(
+        EventResponse(status: 'ON_ERROR', transactionId: '').toJson(),
+      );
     } finally {
       Navigator.pop(context);
     }
@@ -48,7 +58,12 @@ class EqualInAppWebViewWidget extends IWebView {
           TextButton(
             child: const Text('Yes'),
             onPressed: () {
-              onCallback.call('CLOSED_SDK', null);
+              onError.call(
+                EventResponse(
+                  status: 'CLOSED_SDK',
+                ).toJson(),
+              );
+              Navigator.of(context).pop();
               Navigator.of(context).pop();
             },
           ),
@@ -58,15 +73,12 @@ class EqualInAppWebViewWidget extends IWebView {
   }
 
   void postWebMessage(dynamic eventData) {
-    print("event data $eventData");
     try {
       _webViewController.value?.postWebMessage(
         message: WebMessage(data: eventData),
       );
       _isPopupVisible.value = false;
-    } catch (e) {
-      debugPrint('Error posting web message: $e');
-    }
+    } catch (e) {}
   }
 
   @override

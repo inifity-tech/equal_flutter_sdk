@@ -6,19 +6,26 @@ import 'equal_sdk_manager.dart';
 
 class EqualSDKLauncher extends StatelessWidget {
   const EqualSDKLauncher(
-      {super.key, required this.equalSDKConfig, required this.onEvent});
+      {super.key,
+      required this.equalSDKConfig,
+      required this.onSubmit,
+      required this.onError});
 
   final EqualSDKConfig equalSDKConfig;
-  final Function(String, dynamic) onEvent;
+  final Function(dynamic) onSubmit;
+  final Function(dynamic) onError;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: FutureBuilder(
-        future:
-            EqualSDKManager(equalSDKConfig: equalSDKConfig).getGatewayURL((v) {
-          // onEvent(v['status'], v['message']);
-        }),
+        future: EqualSDKManager().getGatewayURL(
+          equalSDKConfig,
+          (v) {
+            onError(v.toJson());
+            Navigator.pop(context);
+          },
+        ),
         builder: (_, snapShot) {
           switch (snapShot.connectionState) {
             case ConnectionState.none:
@@ -30,10 +37,8 @@ class EqualSDKLauncher extends StatelessWidget {
             case ConnectionState.done:
               return EqualInAppWebViewWidget(
                 initialUrl: snapShot.data ?? '',
-                onCallback: (eventType, data) {
-                  print("event type $eventType  >> $data");
-                  onEvent(eventType, data);
-                },
+                onSubmit: onSubmit,
+                onError: onError,
               );
           }
         },
