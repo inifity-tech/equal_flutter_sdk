@@ -52,10 +52,16 @@ class EqualInAppWebViewWidget extends IWebView {
         content: const Text('Are you sure you want to exit?'),
         actions: [
           TextButton(
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.onSurface,
+            ),
             child: const Text('No'),
             onPressed: () => Navigator.of(context).pop(),
           ),
           TextButton(
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.onSurface,
+            ),
             child: const Text('Yes'),
             onPressed: () {
               onError.call(
