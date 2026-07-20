@@ -13,6 +13,16 @@ class EqualInAppWebViewWidget extends IWebView {
   final ValueNotifier<bool> _isPopupVisible = ValueNotifier(false);
   final ValueNotifier<String?> _digiUrl = ValueNotifier(null);
 
+  // DigiLocker auth hosts: legacy (api.digitallocker.gov.in) and the
+  // v2/pinless MeriPehchaan SSO (digilocker.meripehchaan.gov.in).
+  static const List<String> _digiLockerAuthHosts = [
+    'digitallocker.gov',
+    'meripehchaan.gov',
+  ];
+
+  bool _isDigiLockerAuthUrl(String url) =>
+      _digiLockerAuthHosts.any((host) => url.contains(host));
+
   EqualInAppWebViewWidget({
     required super.initialUrl,
     required super.onSubmit,
@@ -118,7 +128,7 @@ class EqualInAppWebViewWidget extends IWebView {
                     return NavigationActionPolicy.CANCEL;
                   }
 
-                  if (url.contains("digitallocker.gov")) {
+                  if (_isDigiLockerAuthUrl(url)) {
                     _digiUrl.value = url;
                     _isPopupVisible.value = true;
                     return NavigationActionPolicy.CANCEL;
